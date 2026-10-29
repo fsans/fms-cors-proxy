@@ -1,0 +1,268 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Method C: Direct Cross-Origin CORS on FileMaker Server",
+    "locale": "en",
+    "output": ".archify/architecture-cors-apache-20261029-125009/cors-apache.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/fsans/fms-cors-proxy.git",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "896260f9248c099c65a17ffed8a79eb838f21abd"
+    },
+    "views": [
+      {
+        "id": "cross-origin-flow",
+        "label": "Cross-origin OData flow",
+        "focus": ["lan-host", "webviewer", "fms-apache", "fms-odata", "fms-db"],
+        "note": "Web Viewer loads the app from a separate LAN host and sends cross-origin requests directly to FMS Apache."
+      },
+      {
+        "id": "preflight-and-headers",
+        "label": "Preflight & Origin policy",
+        "focus": ["webviewer", "cors-policy", "fms-apache"],
+        "note": "Apache <Location /fmi> validates the LAN Origin regex, injects Access-Control-Allow-* headers, and answers OPTIONS with 200 OK."
+      },
+      {
+        "id": "config-reload",
+        "label": "Config files & graceful reload",
+        "focus": ["httpd-conf", "fms-apache", "fms-odata"],
+        "note": "Keep httpd.conf and httpd.conf.2.4 synchronized and reload via launchctl kickstart without bouncing the database."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "lan-host",
+      "type": "cloud",
+      "label": "LAN App Host",
+      "sublabel": "http://192.168.x.x:8080",
+      "tag": "Separate origin",
+      "pos": [40, 50],
+      "size": [170, 62],
+      "sources": [
+        {
+          "path": "docs/cors.md",
+          "line": 5,
+          "end_line": 9,
+          "label": "Separate LAN origin"
+        }
+      ]
+    },
+    {
+      "id": "webviewer",
+      "type": "frontend",
+      "label": "FileMaker Web Viewer",
+      "sublabel": "Origin: 192.168.x.x:8080",
+      "tag": "Cross-origin fetch",
+      "pos": [40, 210],
+      "size": [170, 64],
+      "sources": [
+        {
+          "path": "docs/cors.md",
+          "line": 18,
+          "end_line": 23,
+          "label": "Preflight & fetch checks"
+        },
+        {
+          "path": "docs/cors.md",
+          "line": 119,
+          "end_line": 125,
+          "label": "fms-odata-js headers"
+        }
+      ]
+    },
+    {
+      "id": "cors-policy",
+      "type": "security",
+      "label": "<Location \"/fmi\"> Rule",
+      "sublabel": "RewriteCond LAN Origin",
+      "tag": "OPTIONS -> 200 OK",
+      "pos": [365, 50],
+      "size": [175, 62],
+      "sources": [
+        {
+          "path": "config/apache-cors-location.conf",
+          "line": 10,
+          "end_line": 31,
+          "label": "<Location /fmi> CORS block"
+        },
+        {
+          "path": "docs/cors.md",
+          "line": 86,
+          "end_line": 128,
+          "label": "Origin regex & OPTIONS 200"
+        }
+      ]
+    },
+    {
+      "id": "fms-apache",
+      "type": "backend",
+      "label": "FMS Apache HTTPServer",
+      "sublabel": "fms.example.com :443",
+      "tag": "Trusted TLS cert",
+      "pos": [365, 210],
+      "size": [175, 64],
+      "sources": [
+        {
+          "path": "docs/cors.md",
+          "line": 36,
+          "end_line": 44,
+          "label": "Apache CORS policy"
+        },
+        {
+          "path": "docs/cors.md",
+          "line": 130,
+          "end_line": 144,
+          "label": "Remove global SERVER_NAME CORS"
+        }
+      ]
+    },
+    {
+      "id": "httpd-conf",
+      "type": "external",
+      "label": "httpd.conf + .2.4",
+      "sublabel": "com.filemaker.httpd.graceful",
+      "tag": "launchctl kickstart",
+      "pos": [365, 370],
+      "size": [175, 62],
+      "sources": [
+        {
+          "path": "docs/cors.md",
+          "line": 48,
+          "end_line": 77,
+          "label": "httpd.conf vs httpd.conf.2.4"
+        },
+        {
+          "path": "docs/cors.md",
+          "line": 165,
+          "end_line": 178,
+          "label": "Graceful launchctl kickstart"
+        }
+      ]
+    },
+    {
+      "id": "fms-odata",
+      "type": "backend",
+      "label": "FMS OData Engine",
+      "sublabel": "/fmi/odata/v4/",
+      "tag": "WPE / OData",
+      "pos": [685, 210],
+      "size": [165, 64],
+      "sources": [
+        {
+          "path": "docs/cors.md",
+          "line": 189,
+          "end_line": 206,
+          "label": "OData endpoint verification"
+        }
+      ]
+    },
+    {
+      "id": "fms-db",
+      "type": "database",
+      "label": "FileMaker Database",
+      "sublabel": "Hosted .fmp12 file",
+      "tag": "fmodata priv",
+      "pos": [945, 210],
+      "size": [155, 64],
+      "sources": [
+        {
+          "path": "README.md",
+          "line": 48,
+          "end_line": 49,
+          "label": "fmodata database privilege"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Client & App Origin (http://192.168.x.x:8080)",
+      "wraps": ["lan-host", "webviewer"]
+    },
+    {
+      "kind": "security-group",
+      "label": "FileMaker Server (https://fms.example.com)",
+      "wraps": ["cors-policy", "fms-apache", "httpd-conf", "fms-odata", "fms-db"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "host-to-wv",
+      "from": "lan-host",
+      "to": "webviewer",
+      "label": "loads HTML/JS",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "wv-to-apache",
+      "from": "webviewer",
+      "to": "fms-apache",
+      "label": "OPTIONS + fetch",
+      "variant": "emphasis"
+    },
+    {
+      "id": "policy-to-apache",
+      "from": "cors-policy",
+      "to": "fms-apache",
+      "label": "Allow-Origin",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "conf-to-apache",
+      "from": "httpd-conf",
+      "to": "fms-apache",
+      "label": "graceful reload",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "apache-to-odata",
+      "from": "fms-apache",
+      "to": "fms-odata",
+      "label": "proxies /fmi/",
+      "variant": "emphasis"
+    },
+    {
+      "id": "odata-to-db",
+      "from": "fms-odata",
+      "to": "fms-db",
+      "label": "OData v4"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Preflight & Origin Reflection",
+      "items": [
+        "Matches http://192.168.x.*(:port) via RewriteCond and reflects ALLOW_ORIGIN",
+        "Intercepts OPTIONS requests with RewriteRule ^ - [R=200,L] to prevent 405 errors"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "OData Header Allowlist",
+      "items": [
+        "Explicitly allows Authorization, Accept, Prefer, OData-Version, and OData-MaxVersion",
+        "Removes legacy global Access-Control-Allow-Origin ${SERVER_NAME} lines"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Safe Apache Reload",
+      "items": [
+        "Sync edits across httpd.conf (HTTP/1.1) and httpd.conf.2.4 (HTTP/2)",
+        "Reload with sudo launchctl kickstart -k system/com.filemaker.httpd.graceful"
+      ]
+    }
+  ]
+}
