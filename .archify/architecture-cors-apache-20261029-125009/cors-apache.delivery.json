@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "548a39a3-e1ea-438f-9646-eb9b9bb4042a",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/fsans/Documents/GitHub/fms-cors-proxy/.archify/architecture-cors-apache-20261029-125009/candidate.json",
+  "output": "/Users/fsans/Documents/GitHub/fms-cors-proxy/.archify/architecture-cors-apache-20261029-125009/cors-apache.html",
+  "specification": {
+    "sha256": "c727c652b04f6ec57541e3a1219439cff704a59517fa58ce4e44bd50d8310341",
+    "bytes": 7126
+  },
+  "artifact": {
+    "sha256": "df8172e0d0f0b584212b419e0e21ca1b488fced989e6773e0469c9433076c01f",
+    "bytes": 826310
+  }
+}
